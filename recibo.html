@@ -307,4 +307,9 @@
     const linkZap = `https://api.whatsapp.com/send?text=${encodeURIComponent(textoMensagem)}`;
     window.open(linkZap, '_blank');
   }
+  // Sobrescreve a função de impressão automática na abertura da página
+  window.onload = function() {
+  // Mantém a página estática para o usuário escolher o que fazer
+    console.log("Recibo WFS-Net carregado com sucesso!");
+};
 </script>
