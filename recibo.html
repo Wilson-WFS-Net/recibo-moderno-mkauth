@@ -1,0 +1,310 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;900&display=swap');
+  
+  /* Reset e Estilos Globais */
+  #mk-auth-recibo-card {
+    font-family: 'Inter', sans-serif !important;
+    background-color: #f9fafb;
+    min-height: 100vh;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    -webkit-font-smoothing: antialiased;
+    color: #374151;
+  }
+  
+  #mk-auth-recibo-card * {
+    font-family: 'Inter', sans-serif !important;
+    box-sizing: border-box;
+  }
+
+  /* WRAPPER PARA ALINHAMENTO DOS BOTÕES */
+  .wrapper-recibo {
+    width: 100%;
+    max-width: 576px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* PAINEL DE BOTÕES REFINADO (No topo, alinhado à direita e coladinho na barra verde) */
+  .painel-botoes-compacto {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    margin-bottom: 6px; /* Espaçamento curto antes da barra verde */
+    width: 100%;
+  }
+
+  /* Estilo Compacto e Moderno dos Botões */
+  .btn-mini {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+    color: white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+
+  .btn-mini:hover { opacity: 0.9; transform: translateY(-1px); }
+  
+  /* Cores dos Botões */
+  .btn-imprimir { background-color: #1f2937; } /* Preto/Cinza Escuro */
+  .btn-jpg { background-color: #3b82f6; }      /* Azul */
+  .btn-pdf { background-color: #ef4444; }      /* Vermelho */
+  .btn-whatsapp { background-color: #22c55e; padding-left: 8px; padding-right: 8px; } /* Verde WhatsApp */
+
+  /* Container Principal do Recibo */
+  .recibo-container {
+    background-color: #ffffff;
+    width: 100%;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid #f3f4f6;
+    position: relative;
+    padding-bottom: 32px;
+    overflow: hidden;
+  }
+
+  /* Barra Verde Superior */
+  .barra-sucesso {
+    background-color: #10b981;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    padding: 12px;
+    text-align: center;
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  /* Bloco de Valor Centralizado */
+  .bloco-valor {
+    background-color: rgba(249, 250, 251, 0.6);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid rgba(243, 244, 246, 0.7);
+    max-width: 320px;
+    margin: 0 auto 24px auto;
+  }
+
+  /* Grid Duas Colunas (Pagador / Beneficiário) */
+  .grid-duas-colunas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  /* Grid de Três Colunas (Tabela de Detalhes) */
+  .grid-tres-colunas {
+    display: grid;
+    grid-template-columns: 1.1fr 0.8fr 1.1fr;
+    gap: 12px;
+  }
+
+  /* Linha Separadora Interna dos Detalhes */
+  .linha-detalhe-3 {
+    border-top: 1px solid #f3f4f6;
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+
+  /* Faixa Colorida Inferior */
+  .barra-inferior {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background-image: linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899);
+  }
+
+  /* REGRAS DE IMPRESSÃO - Esconde os botões e ajusta margens automaticamente */
+  @media print { 
+    @page { margin: 0mm; size: auto; }
+    html, body { background: white; margin: 0; padding: 0; } 
+    .no-print { display: none !important; } 
+    #mk-auth-recibo-card { padding: 0 !important; background: white !important; min-height: auto !important; }
+    .recibo-container { border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+  }
+</style>
+
+<div id="mk-auth-recibo-card">
+  <div class="wrapper-recibo">
+
+    <div class="painel-botoes-compacto no-print">
+      <button class="btn-mini btn-imprimir" onclick="window.print()">🖨️ Imprimir</button>
+      <button class="btn-mini btn-jpg" onclick="gerarJPG()">🖼️ JPG</button>
+      <button class="btn-mini btn-pdf" onclick="gerarPDF()">📄 PDF</button>
+      <button class="btn-mini btn-whatsapp" onclick="enviarWhatsApp()" title="Enviar WhatsApp">🟢 WhatsApp</button>
+    </div>
+
+    <div class="recibo-container" id="conteudo-recibo">
+      
+      <div class="barra-sucesso no-print">
+        <span>✓</span> Pagamento Registrado com Sucesso
+      </div>
+
+      <div style="padding: 24px;">
+        
+        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 16px;">
+          <img src="/mkfiles/logo.jpg" alt="Logo" style="max-height: 55px; width: auto; margin-bottom: 12px; display: block;" />
+          
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: #6b7280; text-transform: uppercase;">Comprovante de Pagamento</div>
+          <div style="font-size: 9px; color: #9ca3af; font-family: monospace !important; margin-top: 4px;">PAY-%id@titulo%</div>
+        </div>
+
+        <div class="bloco-valor">
+          <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #9ca3af; margin-bottom: 2px;">Valor Total</div>
+          <div style="font-size: 24px; font-weight: 900; color: #111827; letter-spacing: -0.025em;">R$ %valorpag%</div>
+          <div style="font-size: 10px; color: #6b7280; font-style: italic; margin-top: 2px; font-weight: 500;">( %valorpagext% )</div>
+        </div>
+
+        <div class="grid-duas-colunas" style="font-size: 11px; border-bottom: 1px solid #f3f4f6; padding-bottom: 24px; margin-bottom: 24px;">
+          <div style="line-height: 1.4;">
+            <div style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #9ca3af; letter-spacing: 0.05em; margin-bottom: 2px;">Pagador</div>
+            <div class="txt-nome-cliente" style="font-weight: 700; color: #111827; font-size: 12px;">%nomecliente%</div>
+            <div style="color: #6b7280; font-family: monospace !important; font-size: 10px; margin-top: 2px;">CPF/CNPJ: %cpfcliente%</div>
+            <div style="color: #9ca3af; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;"><span style="font-weight: 600; color: #6b7280;">EMAIL:</span> %emailcliente%</div>
+          </div>
+          <div style="line-height: 1.4;">
+            <div style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #9ca3af; letter-spacing: 0.05em; margin-bottom: 2px;">Beneficiário</div>
+            <div style="font-weight: 700; color: #111827; font-size: 12px;">%provedornome%</div>
+            <div style="color: #6b7280; font-family: monospace !important; font-size: 10px; margin-top: 2px;">CNPJ: %provedorcnpj%</div>
+            <div style="color: #9ca3af; font-size: 10px; margin-top: 2px;">Tel: %provedorfone%</div>
+          </div>
+        </div>
+
+        <div style="text-align: center; padding-top: 8px; padding-bottom: 12px;">
+          <span style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #9ca3af; letter-spacing: 0.05em;">Detalhes da Transação</span>
+        </div>
+
+        <div style="background-color: rgba(249, 250, 251, 0.6); border-radius: 12px; padding: 16px; border: 1px solid rgba(243, 244, 246, 0.7); font-size: 11px; margin-bottom: 32px;">
+          
+          <div class="grid-tres-colunas">
+            <div>
+              <span style="color: #9ca3af; font-size: 9px; display: block; text-transform: uppercase; font-weight: 500;">Data Pagamento</span>
+              <span class="txt-data-pag" style="color: #1f2937; font-weight: 600;">%datapag%</span>
+            </div>
+            <div>
+              <span style="color: #9ca3af; font-size: 9px; display: block; text-transform: uppercase; font-weight: 500;">Hora</span>
+              <span style="color: #1f2937; font-weight: 600;">%horapag%</span>
+            </div>
+            <div>
+              <span style="color: #9ca3af; font-size: 9px; display: block; text-transform: uppercase; font-weight: 500;">Vencimento Original</span>
+              <span style="color: #1f2937; font-weight: 600;">%vencimento%</span>
+            </div>
+          </div>
+
+          <div class="grid-tres-colunas linha-detalhe-3">
+            <div>
+              <span style="color: #9ca3af; font-size: 9px; display: block; text-transform: uppercase; font-weight: 500;">Serviço</span>
+              <span style="color: #1f2937; font-weight: 600;">Internet Banda Larga</span>
+            </div>
+            <div>
+              <span style="color: #9ca3af; font-size: 9px; display: block; text-transform: uppercase; font-weight: 500;">Plano</span>
+              <span style="color: #1f2937; font-weight: 600;">%planodeacesso%</span>
+            </div>
+            <div>
+              <span style="color: #9ca3af; font-size: 9px; display: block; text-transform: uppercase; font-weight: 500;">Forma de Pagamento</span>
+              <span style="color: #1f2937; font-weight: 600; text-transform: capitalize;">%formapag%</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="margin-top: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+          <div style="width: 160px; border-bottom: 1px solid #e5e7eb;"></div>
+          <div style="font-size: 9px; color: #9ca3af; font-weight: 500; margin-top: 4px;">Sócio / Proprietário</div>
+          <div style="font-size: 9px; font-weight: 700; color: #6b7280; letter-spacing: 0.05em; text-transform: uppercase; text-align: center; margin-top: 2px;">%provedornome%</div>
+        </div>
+
+      </div>
+
+      <div class="barra-inferior"></div>
+      <div style="padding-left: 24px; padding-right: 24px; display: flex; justify-content: space-between; align-items: center; font-size: 8px; color: #9ca3af; font-family: monospace !important; margin-top: 8px;">
+        <div>Este documento serve como comprovante de pagamento.</div>
+        <div style="text-align: right; line-height: 1.2;">Autenticação:<br/><span style="font-weight: 700; color: #4b5563;">%codigoseg%</span></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // Função auxiliar para capturar o nome do cliente e data para organizar a nomenclatura do arquivo
+  function obterNomeArquivo() {
+    let nomeCliente = document.querySelector('.txt-nome-cliente').innerText.trim().replace(/\s+/g, '_');
+    let dataPag = document.querySelector('.txt-data-pag').innerText.trim().replace(/\//g, '-');
+    
+    if(!nomeCliente) nomeCliente = "Cliente";
+    if(!dataPag) dataPag = "Comprovante";
+
+    // AJUSTE O NOME DO SEU PROVEDOR ABAIXO (Substitua Recibo_WFS_Net se julgar necessário)
+    return `Recibo_WFS_Net_${nomeCliente}_${dataPag}`;
+  }
+
+  // Função para Gerar o arquivo em PDF
+  function gerarPDF() {
+    const elemento = document.getElementById('conteudo-recibo');
+    const nomeDoArquivoFinal = obterNomeArquivo() + '.pdf';
+
+    const configuracoes = {
+      margin:       10,
+      filename:     nomeDoArquivoFinal,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(configuracoes).from(elemento).save();
+  }
+
+  // Função para Tirar a Foto (Print) do Recibo e Baixar em JPG
+  function gerarJPG() {
+    const elemento = document.getElementById('conteudo-recibo');
+    const nomeDoArquivoFinal = obterNomeArquivo() + '.jpg';
+    
+    html2canvas(elemento, {
+      scale: 2, 
+      useCORS: true,
+      ignoreElements: (el) => el.classList.contains('no-print')
+    }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = nomeDoArquivoFinal;
+      link.href = canvas.toDataURL('image/jpeg', 0.95);
+      link.click();
+    });
+  }
+
+  // Função para Estruturar a mensagem e abrir o WhatsApp Web/App
+  function enviarWhatsApp() {
+    const textoMensagem = 
+      `*COMPROVANTE DE PAGAMENTO*\n\n` +
+      `Olá, *%nomecliente%*.\n` +
+      `Confirmamos o recebimento do seu pagamento:\n\n` +
+      `• *Valor:* R$ %valorpag%\n` +
+      `• *Plano:* %planodeacesso%\n` +
+      `• *Data Pagamento:* %datapag% às %horapag%\n` +
+      `• *Forma:* %formapag%\n\n` +
+      `• *Autenticação:* %codigoseg%\n\n` +
+      `Obrigado por sua confiança!`;
+
+    const linkZap = `https://api.whatsapp.com/send?text=${encodeURIComponent(textoMensagem)}`;
+    window.open(linkZap, '_blank');
+  }
+</script>
